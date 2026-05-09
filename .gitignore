@@ -1,0 +1,14 @@
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# dados
+data/raw/
+data/processed/
+*.duckdb
+*.parquet
+
+# credenciais
+.env
