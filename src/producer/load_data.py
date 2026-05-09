@@ -2,7 +2,20 @@ import pandas as pd
 import psycopg2
 import time
 import logging
+from dotenv import load_dotenv
+import os
 import numpy as np
+
+load_dotenv()
+
+def connect_db():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        database=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        port=os.getenv("DB_PORT")
+    )
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,11 +26,11 @@ logger = logging.getLogger(__name__)
 def connect_db():
     try:
         return psycopg2.connect(
-            host="localhost",
-            database="nyctaxi",
-            user="user",
-            password="password",
-            port=5432
+            host=os.getenv("DB_HOST"),
+            database=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            port=os.getenv("DB_PORT")
         )
     except Exception as e:
         logger.error(f"Erro ao conectar no banco: {e}")
@@ -26,6 +39,11 @@ def connect_db():
 def create_table(conn):
     with conn.cursor() as cur:
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS public.trips (
+                id SERIAL PRIMARY KEY,
+                vendor_id INTEGER,
+                tpep_pickup_datetime TIMESTAMP,
+                tpep_dropoff_datetime TIMESTAMP,
             CREATE TABLE IF NOT EXISTS public.trips (
                 id SERIAL PRIMARY KEY,
                 vendor_id INTEGER,

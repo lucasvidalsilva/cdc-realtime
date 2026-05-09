@@ -2,11 +2,15 @@ import json
 import duckdb
 from kafka import KafkaConsumer
 import logging
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-db = duckdb.connect("data/trips_data.duckdb")
+db = duckdb.connect(os.getenv("DUCKDB_PATH"))
 
 def setup_sink():
     db.execute("""
@@ -24,8 +28,8 @@ def run_consumer():
     setup_sink()
     
     consumer = KafkaConsumer(
-        'cdc.public.trips', # O tópico que o Debezium criou
-        bootstrap_servers=['localhost:9092'],
+        os.getenv("KAFKA_TOPIC"),
+        bootstrap_servers=[os.getenv("KAFKA_BOOTSTRAP_SERVERS")],
         auto_offset_reset='earliest',
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )

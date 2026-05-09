@@ -59,14 +59,7 @@ cdc-realtime/
 ## Como rodar
 
 ```bash
-# 1. Subir infraestrutura
-docker compose -f docker/docker-compose.yml up -d
-
-# 2. Criar tabela e carregar dados
-python src/producer/load_data.py
-
-# 3. Iniciar consumer
-python src/consumer/cdc_consumer.py
+./run.sh
 ```
 
 ## O que este projeto demonstra
