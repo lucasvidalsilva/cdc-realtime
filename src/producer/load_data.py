@@ -37,28 +37,25 @@ def connect_db():
         raise
 
 def create_table(conn):
+    """Cria a tabela no PostgreSQL com SQL sanitizado"""
+    sql_create = """
+    CREATE TABLE IF NOT EXISTS public.trips (
+        id SERIAL PRIMARY KEY,
+        vendor_id INTEGER,
+        tpep_pickup_datetime TIMESTAMP,
+        tpep_dropoff_datetime TIMESTAMP,
+        passenger_count FLOAT,
+        trip_distance FLOAT,
+        payment_type FLOAT,
+        fare_amount FLOAT,
+        total_amount FLOAT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """
     with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS public.trips (
-                id SERIAL PRIMARY KEY,
-                vendor_id INTEGER,
-                tpep_pickup_datetime TIMESTAMP,
-                tpep_dropoff_datetime TIMESTAMP,
-            CREATE TABLE IF NOT EXISTS public.trips (
-                id SERIAL PRIMARY KEY,
-                vendor_id INTEGER,
-                tpep_pickup_datetime TIMESTAMP,
-                tpep_dropoff_datetime TIMESTAMP,
-                passenger_count FLOAT,
-                trip_distance FLOAT,
-                payment_type FLOAT,
-                fare_amount FLOAT,
-                total_amount FLOAT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
+        cur.execute(sql_create)
     conn.commit()
-    logger.info("Tabela 'trips' criada no banco de dados.")
+    logger.info("Tabela 'trips' verificada/criada com sucesso.")
 
 def stream_data():
     logger.info("Carregando o dataset de amostra...")

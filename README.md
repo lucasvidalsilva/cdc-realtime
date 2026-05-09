@@ -59,7 +59,7 @@ cdc-realtime/
 ## Como rodar
 
 ```bash
-./run.sh
+./run.py
 ```
 
 ## O que este projeto demonstra
