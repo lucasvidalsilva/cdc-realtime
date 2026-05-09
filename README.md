@@ -36,10 +36,7 @@ Fonte: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 ## Estrutura
 
-```
-cdc-realtime/
-
-```
+![Imagem da Estrutura de Pastas](docs/print_estrutura_pasta.png)
 
 ## Como rodar
 
