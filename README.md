@@ -38,27 +38,25 @@ Fonte: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 ```
 cdc-realtime/
-├── docker/
-│   └── docker-compose.yml     # Kafka + Zookeeper + Debezium + Postgres
-├── src/
-│   ├── producer/
-│   │   └── load_data.py       # Insere NYC TLC data no Postgres
-│   ├── consumer/
-│   │   └── cdc_consumer.py    # Lê eventos Kafka e persiste
-│   └── models/
-│       └── trip.py            # Modelo de dado
-├── tests/
-│   └── test_consumer.py
-├── docs/
-│   └── architecture.md
-├── .env.example
-├── pyproject.toml
-└── README.md
+
 ```
 
 ## Como rodar
 
 ```bash
+# 1. Criar o ambiente virtual
+python -m venv .venv
+
+# 2. Ativar o ambiente
+# No Windows:
+.venv\Scripts\activate
+# No Linux/Mac:
+source .venv/bin/activate
+
+# 3. Instalar dependências
+pip install -r requirements.txt
+
+# 4. Rode o script python:
 ./run.py
 ```
 
