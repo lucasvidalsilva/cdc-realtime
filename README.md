@@ -1,65 +1,68 @@
-# 01 · CDC em Tempo Real
+# CDC Real-Time — PostgreSQL, Debezium e Kafka
 
-> A maioria das empresas ainda copia tabela inteira toda hora. CDC captura só o que mudou, em tempo real.
+Protótipo local de Change Data Capture com PostgreSQL 16, Debezium, Kafka e um consumidor Python que grava eventos de criação no DuckDB.
+
+**Estado:** prova de conceito parcial. A infraestrutura e o caminho de `INSERT` estão implementados; UPDATE, aplicação de DELETE no destino, idempotência, testes e recuperação de offsets ainda não estão concluídos.
 
 ## Problema
 
-Pipelines batch tradicionais sobrecarregam o banco de origem e introduzem latência desnecessária. Change Data Capture resolve isso capturando apenas os eventos de INSERT, UPDATE e DELETE diretamente do write-ahead log (WAL) do banco.
+Recarregar tabelas inteiras aumenta trabalho no banco de origem e latência. CDC lê mudanças do WAL do PostgreSQL e as publica como eventos incrementais.
 
-## Solução
+## Fluxo implementado
 
-Pipeline CDC completo com Debezium lendo o WAL do PostgreSQL e publicando eventos no Kafka. Consumer Python consome e persiste o stream.
-
+```mermaid
+flowchart LR
+    DATA["NYC TLC Parquet<br/>amostra local"] --> PG["PostgreSQL<br/>public.trips"]
+    PG -->|WAL lógico| DBZ["Debezium 2.5"]
+    DBZ --> KAFKA["Kafka<br/>tópico cdc.public.trips"]
+    KAFKA --> PY["consumer Python"]
+    PY --> DUCK["DuckDB<br/>trips_analytics"]
 ```
-PostgreSQL (WAL)
-    └── Debezium Connector
-        └── Kafka Topic: nyc-trips.cdc
-            └── Python Consumer
-                └── Sink: Parquet / DuckDB
+
+O produtor insere a amostra linha a linha no PostgreSQL. O consumidor trata eventos Debezium com operação `c` e insere cinco campos no DuckDB; eventos `d` são apenas registrados no log. Não há ramo para `u`.
+
+## Pré-requisitos
+
+- Python 3.10+;
+- Docker com Compose;
+- acesso à internet para baixar a amostra NYC TLC;
+- um arquivo `.env` local, não versionado.
+
+Variáveis usadas pelo código:
+
+```dotenv
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=nyctaxi
+DB_USER=user
+DB_PASSWORD=password
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_TOPIC=cdc.public.trips
+DUCKDB_PATH=data/cdc.duckdb
 ```
 
-## Dataset
-
-**NYC TLC Trip Records**: Dados públicos de corridas de táxi de Nova York.
-Fonte: https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-
-## Stack
-
-| Camada | Tecnologia |
-|---|---|
-| Fonte | PostgreSQL 16 |
-| CDC Connector | Debezium 2.x |
-| Message Broker | Apache Kafka |
-| Consumer | Python 3.12 + kafka-python |
-| Sink | DuckDB / Parquet |
-| Infra local | Docker Compose |
-
-## Estrutura
-
-![Imagem da Estrutura de Pastas](docs/print_estrutura_pasta.png)
-
-## Como rodar
+## Executar
 
 ```bash
-# 1. Criar o ambiente virtual
 python -m venv .venv
-
-# 2. Ativar o ambiente
-# No Windows:
-.venv\Scripts\activate
-# No Linux/Mac:
-source .venv/bin/activate
-
-# 3. Instalar dependências
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
-
-# 4. Rode o script python:
-./run.py
+python src/producer/extract_sample.py
+python run.py
 ```
 
-## O que este projeto demonstra
+`run.py` sobe o Compose, espera o Debezium, registra o connector, inicia consumidor e produtor e encerra o consumidor quando a carga termina. O script não derruba os containers automaticamente.
 
-- Configuração de CDC com Debezium + Kafka
-- Leitura de eventos de mudança (INSERT / UPDATE / DELETE)
-- Schema evolution handling
-- Consumer idempotente com retry
+Para inspecionar o destino, use `notebook/check_data_duckdb.ipynb` ou consulte `trips_analytics` diretamente no arquivo configurado.
+
+## Verificações e limites
+
+- não há suíte automatizada;
+- a sintaxe Python foi compilada na auditoria local, sem executar Docker ou o fluxo end-to-end;
+- o consumer não define `group_id` nem chave única e pode duplicar linhas em reprocessamentos;
+- UPDATE não é aplicado e DELETE não remove dados do DuckDB;
+- não há tratamento de tombstones, evolução de schema, DLQ ou retries explícitos;
+- credenciais do Compose são apenas valores locais de demonstração.
+
+Próximos passos coerentes: definir a semântica do destino, implementar UPSERT/DELETE idempotentes, persistir offsets por grupo e adicionar um teste end-to-end para INSERT, UPDATE, DELETE e reinício do consumer.
